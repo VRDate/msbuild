@@ -2425,7 +2425,6 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                   <ItemGroup>
                     <A Include=`1;2;3`/>
                     <B Include=`1;2;3` Exclude=`1`/>
-                    <C Include=`2;3` Exclude=`2`/>
                   </ItemGroup>
                 </Project>
                 ";
@@ -2458,6 +2457,22 @@ namespace Microsoft.Build.UnitTests.OM.Definition
         }
 
         [Fact]
+        public void GetItemProvenanceShouldNotReportMatchesInExcludesIfNoIncludeMatchesExist()
+        {
+            var project =
+                @"<Project ToolsVersion='msbuilddefaulttoolsversion' DefaultTargets='Build' xmlns='msbuildnamespace'>
+                  <ItemGroup>
+                    <A Include=`1,2,3` Exclude=`4`/>
+                  </ItemGroup>
+                </Project>
+                ";
+
+            var expected = new List<Tuple<string, Operation, Provenance, int>>();
+
+            AssertProvenanceResult(expected, project, "4");
+        }
+
+        [Fact]
         public void GetItemProvenanceOnlyGlob()
         {
             var project = 
@@ -2486,7 +2501,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
             @"<Project ToolsVersion='msbuilddefaulttoolsversion' DefaultTargets='Build' xmlns='msbuildnamespace'>
                   <ItemGroup>
                     <A Include=`*.foo;1.foo;1.foo`/>
-                    <B Include=`1;2;3` Exclude=`*.foo;1.foo;*.foo;1.foo;2.foo`/>
+                    <B Include=`1;2;1.foo` Exclude=`*.foo;1.foo;*.foo;1.foo;2.foo`/>
                     <C Include=`2;3` Exclude=`2`/>
                   </ItemGroup>
                 </Project>
@@ -2509,7 +2524,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                   <ItemGroup>
                     <A Include=`*.foo;1.foo`/>
                     <B Include=`*.foo;1.foo`/>
-                    <B Include=`1;2;3` Exclude=`*.foo;1.foo`/>
+                    <B Include=`1;2;1.foo` Exclude=`*.foo;1.foo`/>
                     <C Include=`2;3` Exclude=`2`/>
                   </ItemGroup>
                 </Project>

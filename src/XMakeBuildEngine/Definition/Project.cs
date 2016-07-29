@@ -1033,14 +1033,14 @@ namespace Microsoft.Build.Evaluation
             return ((IItem)item).EvaluatedIncludeEscaped;
         }
 
-        public List<ProvenanceResult> GetItemProvenance(string itemValue)
+        public List<ProvenanceResult> GetItemProvenance(string itemToMatch)
         {
-            return GetItemProvenance(itemValue, _data.EvaluatedItemElements);
+            return GetItemProvenance(itemToMatch, _data.EvaluatedItemElements);
         }
 
-        public List<ProvenanceResult> GetItemProvenance(string itemValue, string itemType)
+        public List<ProvenanceResult> GetItemProvenance(string itemToMatch, string itemType)
         {
-            return GetItemProvenance(itemValue, _data.EvaluatedItemElements.Where(i => i.ItemType.Equals(itemType)));
+            return GetItemProvenance(itemToMatch, _data.EvaluatedItemElements.Where(i => i.ItemType.Equals(itemType)));
         }
 
         public List<ProvenanceResult> GetItemProvenance(ProjectItem item)
@@ -1055,34 +1055,39 @@ namespace Microsoft.Build.Evaluation
         }
 
 
-        private List<ProvenanceResult> GetItemProvenance(string itemValue, IEnumerable<ProjectItemElement> projectElements )
+        private List<ProvenanceResult> GetItemProvenance(string itemToMatch, IEnumerable<ProjectItemElement> projectItemElements )
         {
-            var result = new List<ProvenanceResult>();
+            return
+                projectItemElements.Select(i => ComputeProvenanceResult(itemToMatch, i))
+                    .Where(r => r != null)
+                    .ToList();
+        }
 
+        private ProvenanceResult ComputeProvenanceResult(string itemToMatch, ProjectItemElement itemElement)
+        {
             var expander = new Expander<ProjectProperty, ProjectItem>(_data.Properties, _data.Items);
+            Func<IElementLocation, Func<string, ExpanderOptions, string>> expandForXmlLocation = (l) => (s, o) => expander.ExpandIntoStringLeaveEscaped(s, o, l);
 
-            foreach (var itemElement in projectElements)
+            var includeResult = ComputeProvenanceResult(itemToMatch, itemElement.Include, expandForXmlLocation(itemElement.IncludeLocation));
+
+            if (includeResult == null)
             {
-                Provenance provenance;
-
-                var occurrencesInExclude = ItemMatchesInSpecCompareViaExpander(itemValue, itemElement.Exclude, (s, o) => expander.ExpandIntoStringLeaveEscaped(s, o, itemElement.ExcludeLocation), out provenance);
-
-                if (occurrencesInExclude > 0)
-                {
-                    result.Add(new ProvenanceResult(itemElement, Operation.Exclude, provenance, occurrencesInExclude));
-                }
-                else
-                {
-                    var occurrencesInInclude = ItemMatchesInSpecCompareViaExpander(itemValue, itemElement.Include, (s, o) => expander.ExpandIntoStringLeaveEscaped(s, o, itemElement.IncludeLocation), out provenance);
-
-                    if (occurrencesInInclude > 0)
-                    {
-                        result.Add(new ProvenanceResult(itemElement, Operation.Include, provenance, occurrencesInInclude));
-                    }
-                }
+                return null;
             }
 
-            return result;
+            var excludeResult = ComputeProvenanceResult(itemToMatch, itemElement.Exclude, expandForXmlLocation(itemElement.ExcludeLocation));
+
+            return excludeResult != null
+                ? new ProvenanceResult(itemElement, Operation.Exclude, excludeResult.Item1, excludeResult.Item2)
+                : new ProvenanceResult(itemElement, Operation.Include, includeResult.Item1, includeResult.Item2);
+        }
+
+        private Tuple<Provenance, int> ComputeProvenanceResult(string itemToMatch, string itemSpecToLookIn, Func<string, ExpanderOptions, string> expand)
+        {
+            Provenance provenance;
+            var matchOccurrences = ItemMatchesInSpecCompareViaExpander(itemToMatch, itemSpecToLookIn, expand, out provenance);
+
+            return matchOccurrences > 0 ? Tuple.Create(provenance, matchOccurrences) : null;
         }
 
         /// <summary>
