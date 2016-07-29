@@ -461,6 +461,27 @@ namespace Microsoft.Build.Shared
         }
 
         /// <summary>
+        /// A variation of Path.GetFullPath that will return the input value 
+        /// instead of throwing any IO exception.
+        /// Useful to get a better path for an error message, without the risk of throwing
+        /// if the error message was itself caused by the path being invalid!
+        /// </summary>
+        internal static string GetFullPathNoThrow(string fileSpec, string currentDirectory)
+        {
+            var fullPath = fileSpec;
+
+            try
+            {
+                fullPath = GetFullPath(fileSpec, currentDirectory);
+            }
+            catch (Exception ex) when (ExceptionHandling.IsIoRelatedException(ex))
+            {
+            }
+
+            return fullPath;
+        }
+
+        /// <summary>
         /// A variation on File.Delete that will throw ExceptionHandling.NotExpectedException exceptions
         /// </summary>
         internal static void DeleteNoThrow(string path)

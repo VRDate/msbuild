@@ -2418,6 +2418,24 @@ namespace Microsoft.Build.UnitTests.OM.Definition
         }
 
         [Fact]
+        public void GetItemProvenanceShouldReturnEmptyListOnNoMatches()
+        {
+            var project =
+                @"<Project ToolsVersion='msbuilddefaulttoolsversion' DefaultTargets='Build' xmlns='msbuildnamespace'>
+                  <ItemGroup>
+                    <A Include=`1;2;3`/>
+                    <B Include=`1;2;3` Exclude=`1`/>
+                    <C Include=`2;3` Exclude=`2`/>
+                  </ItemGroup>
+                </Project>
+                ";
+
+            var expected = new List<Tuple<string, Operation, Provenance, int>>();
+
+            AssertProvenanceResult(expected, project, "4");
+        }
+
+        [Fact]
         public void GetItemProvenanceOnlyStringLiteral()
         {
             var project =
@@ -2622,6 +2640,40 @@ namespace Microsoft.Build.UnitTests.OM.Definition
 
             AssertProvenanceResult(expected, project, "1.foo");
             AssertProvenanceResult(expected, project, @".\1.foo");
+        }
+
+        [Fact]
+        public void GetItemProvenanceShouldMatchStringsWithIllegalPathCharacters()
+        {
+            var project =
+                @"<Project ToolsVersion='msbuilddefaulttoolsversion' DefaultTargets='Build' xmlns='msbuildnamespace'>
+                  <ItemGroup>
+                    <A Include=`|:/\?*`/>
+                  </ItemGroup>
+                </Project>
+                ";
+
+            var expected = new List<Tuple<string, Operation, Provenance, int>>();
+
+            AssertProvenanceResult(expected, project, @"?:/*\|");
+        }
+
+        [Fact]
+        public void GetItemProvenanceShouldWorkWithStringsExceedingMaxPath()
+        {
+            var longString = new string('a', 1000);
+
+            var project =
+                @"<Project ToolsVersion='msbuilddefaulttoolsversion' DefaultTargets='Build' xmlns='msbuildnamespace'>
+                  <ItemGroup>
+                    <A Include=`" + longString +  @"`/>
+                  </ItemGroup>
+                </Project>
+                ";
+
+            var expected = new List<Tuple<string, Operation, Provenance, int>>();
+
+            AssertProvenanceResult(expected, project, longString + "a");
         }
 
         private static void AssertProvenanceResult(List<Tuple<string, Operation, Provenance, int>> expected, string project, string itemValue)
