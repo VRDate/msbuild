@@ -18,6 +18,8 @@ using Microsoft.Build.Execution;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Shared;
 
+// can't use an actual ProvenanceResult because it points to a ProjectItemElement which is hard to mock. 
+using ProvenanceResultTupleList = System.Collections.Generic.List<System.Tuple<string, Microsoft.Build.Evaluation.Operation, Microsoft.Build.Evaluation.Provenance, int>>;
 using InvalidProjectFileException = Microsoft.Build.Exceptions.InvalidProjectFileException;
 using ToolLocationHelper = Microsoft.Build.Utilities.ToolLocationHelper;
 using TargetDotNetFrameworkVersion = Microsoft.Build.Utilities.TargetDotNetFrameworkVersion;
@@ -2429,7 +2431,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
                 ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>();
+            var expected = new ProvenanceResultTupleList();
 
             AssertProvenanceResult(expected, project, "4");
         }
@@ -2447,7 +2449,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
                 ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            var expected = new ProvenanceResultTupleList
             {
                 Tuple.Create("A", Operation.Include, Provenance.StringLiteral, 1),
                 Tuple.Create("B", Operation.Exclude, Provenance.StringLiteral, 1)
@@ -2467,7 +2469,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
                 ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>();
+            var expected = new ProvenanceResultTupleList();
 
             AssertProvenanceResult(expected, project, "4");
         }
@@ -2485,7 +2487,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
             ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            var expected = new ProvenanceResultTupleList
             {
                 Tuple.Create("A", Operation.Include, Provenance.Glob, 1),
                 Tuple.Create("B", Operation.Exclude, Provenance.Glob, 1)
@@ -2507,7 +2509,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
             ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            var expected = new ProvenanceResultTupleList
             {
                 Tuple.Create("A", Operation.Include, Provenance.Glob | Provenance.StringLiteral, 3),
                 Tuple.Create("B", Operation.Exclude, Provenance.Glob | Provenance.StringLiteral, 4)
@@ -2530,7 +2532,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
             ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            var expected = new ProvenanceResultTupleList
             {
                 Tuple.Create("B", Operation.Include, Provenance.Glob | Provenance.StringLiteral, 2),
                 Tuple.Create("B", Operation.Exclude, Provenance.Glob | Provenance.StringLiteral, 2)
@@ -2553,7 +2555,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
             ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            var expected = new ProvenanceResultTupleList
             {
                 Tuple.Create("B", Operation.Exclude, Provenance.Glob | Provenance.StringLiteral, 2),
                 Tuple.Create("B", Operation.Include, Provenance.Glob | Provenance.StringLiteral, 2)
@@ -2578,7 +2580,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
                 ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            var expected = new ProvenanceResultTupleList
             {
                 Tuple.Create("B", Operation.Include, Provenance.StringLiteral, 1),
                 Tuple.Create("A", Operation.Exclude, Provenance.Inconclusive | Provenance.StringLiteral, 3)
@@ -2603,7 +2605,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
                 ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            var expected = new ProvenanceResultTupleList
             {
                 Tuple.Create("B", Operation.Include, Provenance.StringLiteral, 1),
                 Tuple.Create("A", Operation.Include, Provenance.Inconclusive | Provenance.StringLiteral, 3)
@@ -2628,7 +2630,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
                 ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            var expected = new ProvenanceResultTupleList
             {
                 Tuple.Create("B", Operation.Include, Provenance.StringLiteral, 1),
                 Tuple.Create("A", Operation.Include, Provenance.Inconclusive | Provenance.Glob, 3)
@@ -2648,7 +2650,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
                 ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            var expected = new ProvenanceResultTupleList
             {
                 Tuple.Create("A", Operation.Include, Provenance.StringLiteral, 3)
             };
@@ -2668,7 +2670,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
                 ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>();
+            var expected = new ProvenanceResultTupleList();
 
             AssertProvenanceResult(expected, project, @"?:/*\|");
         }
@@ -2686,7 +2688,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
                 ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>();
+            var expected = new ProvenanceResultTupleList();
 
             AssertProvenanceResult(expected, project, longString + "a");
         }
@@ -2703,7 +2705,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
                 </Project>
                 ";
 
-            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            var expected = new ProvenanceResultTupleList
             {
                 Tuple.Create("A", Operation.Include, Provenance.StringLiteral, 1)
             };
@@ -2711,19 +2713,19 @@ namespace Microsoft.Build.UnitTests.OM.Definition
             AssertProvenanceResult(expected, project, "A");
         }
 
-        private static void AssertProvenanceResult(List<Tuple<string, Operation, Provenance, int>> expected, string project, string itemValue)
+        private static void AssertProvenanceResult(ProvenanceResultTupleList expected, string project, string itemValue)
         {
             var provenanceResult = ObjectModelHelpers.CreateInMemoryProject(project).GetItemProvenance(itemValue);
             AssertProvenanceResult(expected, provenanceResult);
         }
 
-        private static void AssertProvenanceResult(List<Tuple<string, Operation, Provenance, int>> expected, string project, string itemValue, string itemType)
+        private static void AssertProvenanceResult(ProvenanceResultTupleList expected, string project, string itemValue, string itemType)
         {
             var provenanceResult = ObjectModelHelpers.CreateInMemoryProject(project).GetItemProvenance(itemValue, itemType);
             AssertProvenanceResult(expected, provenanceResult);
         }
 
-        private static void AssertProvenanceResult(List<Tuple<string, Operation, Provenance, int>> expected, string project, string itemValue, int position)
+        private static void AssertProvenanceResult(ProvenanceResultTupleList expected, string project, string itemValue, int position)
         {
             var p = ObjectModelHelpers.CreateInMemoryProject(project);
             var item = p.Items.Where(i => i.EvaluatedInclude.Equals(itemValue)).ElementAt(position);
@@ -2732,7 +2734,7 @@ namespace Microsoft.Build.UnitTests.OM.Definition
             AssertProvenanceResult(expected, provenanceResult);
         }
 
-        private static void AssertProvenanceResult(List<Tuple<string, Operation, Provenance, int>> expected, List<ProvenanceResult> actual)
+        private static void AssertProvenanceResult(ProvenanceResultTupleList expected, List<ProvenanceResult> actual)
         {
             Assert.Equal(expected.Count, actual.Count);
 
