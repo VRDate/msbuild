@@ -1114,10 +1114,6 @@ namespace Microsoft.Build.Evaluation
             Provenance provenanceFromExpandedPropertiesAndItems;
             var expandedMatches = ItemMatchesInSpec(itemToMatch, expand(itemSpec, ExpanderOptions.ExpandPropertiesAndItems), out provenanceFromExpandedPropertiesAndItems);
 
-            // look into the itemspec when properties are expanded, but not items
-            Provenance provenanceFromExpandedProperties;
-            ItemMatchesInSpec(itemToMatch, expand(itemSpec, ExpanderOptions.ExpandProperties), out provenanceFromExpandedProperties);
-
             // look into the raw itemspec
             Provenance provenanceFromNonExpandedString;
             var nonExpandedMatches = ItemMatchesInSpec(itemToMatch, itemSpec, out provenanceFromNonExpandedString);
@@ -1128,6 +1124,8 @@ namespace Microsoft.Build.Evaluation
 
                 // return the provenance WITHOUT item expansion. Otherwise the items coming from a referenced item get interpreted as StringLiteral
                 // include="*.cs;@(Compile)" needs to return Inconclusive|Glob and not Inconclusive|Glob|StringLiteral
+                Provenance provenanceFromExpandedProperties;
+                ItemMatchesInSpec(itemToMatch, expand(itemSpec, ExpanderOptions.ExpandProperties), out provenanceFromExpandedProperties);
 
                 provenance = Provenance.Inconclusive | provenanceFromExpandedProperties;
                 return expandedMatches;
