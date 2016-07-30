@@ -2691,6 +2691,26 @@ namespace Microsoft.Build.UnitTests.OM.Definition
             AssertProvenanceResult(expected, project, longString + "a");
         }
 
+        // todo: on xplat, split this to windows and non-windows test
+        [Fact]
+        public void GetItemProvenancePathMatchingShouldBeCaseInsensitive()
+        {
+            var project =
+                @"<Project ToolsVersion='msbuilddefaulttoolsversion' DefaultTargets='Build' xmlns='msbuildnamespace'>
+                  <ItemGroup>
+                    <A Include=`a`/>
+                  </ItemGroup>
+                </Project>
+                ";
+
+            var expected = new List<Tuple<string, Operation, Provenance, int>>
+            {
+                Tuple.Create("A", Operation.Include, Provenance.StringLiteral, 1)
+            };
+
+            AssertProvenanceResult(expected, project, "A");
+        }
+
         private static void AssertProvenanceResult(List<Tuple<string, Operation, Provenance, int>> expected, string project, string itemValue)
         {
             var provenanceResult = ObjectModelHelpers.CreateInMemoryProject(project).GetItemProvenance(itemValue);

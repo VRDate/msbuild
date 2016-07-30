@@ -1178,7 +1178,7 @@ namespace Microsoft.Build.Evaluation
             var thisProjectPath = _data.Directory;
 
             // It is either a direct string match or the two strings refer to the same file, relative to the project directory
-            return itemToMatch.Equals(itemFragment) || string.Equals(FileUtilities.GetFullPathNoThrow(itemToMatch, thisProjectPath), FileUtilities.GetFullPathNoThrow(itemFragment, thisProjectPath));
+            return itemToMatch.Equals(itemFragment) || FileUtilities.ComparePathsNoThrow(itemToMatch, itemFragment, thisProjectPath);
         }
 
         private static bool ItemMatchesGlob(string globPattern, string file)
